@@ -1,6 +1,7 @@
-﻿CREATE PROCEDURE UpdateUserBalanceOnBuying
+﻿CREATE OR ALTER PROCEDURE UpdateUserBalanceOnBuying
 	@pUserEmail NVARCHAR(50), 
-	@pTransactionValue INT
+	@pTransactionValue INT,
+	@pNewValue INT OUTPUT
 AS
 BEGIN
 	SET NOCOUNT ON; 
@@ -21,6 +22,7 @@ BEGIN
 		
 	IF (SELECT UserBalance FROM Users WHERE UserEmail = @pUserEmail) >= @pTransactionValue 
 	BEGIN 
+		SET @pNewValue = (SELECT UserBalance FROM Users WHERE UserEmail = @pUserEmail) - @pTransactionValue
 		UPDATE Users 
 		SET UserBalance = UserBalance - @pTransactionValue 
 		FROM Users u 

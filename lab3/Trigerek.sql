@@ -1,4 +1,4 @@
-﻿CREATE TRIGGER trg_UpdateUserBalanceIfTransactionMatch
+﻿CREATE OR ALTER TRIGGER trg_UpdateUserBalanceIfTransactionMatch
 ON Transactions
 AFTER INSERT
 AS
@@ -81,7 +81,3 @@ BEGIN
 	DROP TABLE #t1
 	DROP TABLE #t2
 END
-
-
---Tarolt eljarasok:
---Visszaadja azt a userEmail-t aki a legnagyobb transactionValue-val rendelkezik
