@@ -3,20 +3,24 @@
 	@pTransactionValue INT,
 	@pNewValue INT OUTPUT
 AS
-BEGIN
+BEGIN 
 	SET NOCOUNT ON; 
 
-	--Parameter ellenorzes
-	IF NOT EXISTS (SELECT * FROM Users WHERE UserEmail = @pUserEmail)
+	IF NOT EXISTS (SELECT 1 FROM Users WHERE UserEmail = @pUserEmail)
 	BEGIN
-		PRINT 'Ez a User nem letezik'
-		RETURN
+		RAISERROR('The user is does not exist', 16, 1)
+		RETURN -10
 	END
 
-	IF @pTransactionValue < 10
+	IF @pTransactionValue < 0
 	BEGIN
-		PRINT 'Ez az ertek tul kicsi'
-		RETURN
+		RAISERROR('The value is negativ', 16, 1)
+		RETURN -20
+	END
+	ELSE IF @pTransactionValue < 20
+	BEGIN
+		RAISERROR('The value is below 20, it needs to be higher', 16, 1)
+		RETURN -21
 	END
 
 		
@@ -30,7 +34,8 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		PRINT 'The User does not have enough money for this transaction'
+		RAISERROR('The value is below 20, it needs to be higher', 16, 1)
+		RETURN -12
 	END
 END
 GO
