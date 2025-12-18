@@ -34,8 +34,9 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		RAISERROR('The value is below 20, it needs to be higher', 16, 1)
+		RAISERROR('The value is bigger then the UserBalance', 16, 1)
 		RETURN -12
 	END
 END
 GO
+
