@@ -1,4 +1,4 @@
-﻿CREATE OR ALTER PROCEDURE [dbo].[SkinsVasarlas_AutoKeresessel]
+﻿CREATE OR ALTER PROCEDURE SkinsVasarlasAutoKeresessel
     @pUserEmail NVARCHAR(50),      -- Ki vasarol?
     @pSkinName NVARCHAR(50),       -- Milyen skint?
     @pOperatorName NVARCHAR(50),   -- Melyik operatornak?
@@ -39,56 +39,67 @@ BEGIN
         AND VS.OperatorName = @pOperatorName
         
     OPEN SkinKereso
-
     FETCH NEXT FROM SkinKereso INTO @KeresettValidSkinID, @KeresettItemName
+
     WHILE @@FETCH_STATUS = 0 AND @TalaltVasarolhato = 0
     BEGIN
+		-- Megnezi ha a skint birtokolja a felhasznalo
         IF NOT EXISTS (
             SELECT 1 
             FROM Own 
             WHERE UserEmail = @pUserEmail 
-                AND ValidSkinID = @KeresettValidSkinID
-			)
-        BEGIN
-            DECLARE @JelenlegiEgyenleg INT
-            SELECT @JelenlegiEgyenleg = UserBalance FROM Users WHERE UserEmail = @pUserEmail
+                AND ValidSkinID = @KeresettValidSkinID 
+			) 
+        BEGIN 
+            DECLARE @JelenlegiEgyenleg INT 
+            SELECT @JelenlegiEgyenleg = UserBalance FROM Users WHERE UserEmail = @pUserEmail 
 
-            IF @JelenlegiEgyenleg >= @pAr
-            BEGIN
-                UPDATE Users
-                SET UserBalance = UserBalance - @pAr
-                WHERE UserEmail = @pUserEmail
+            IF @JelenlegiEgyenleg >= @pAr 
+            BEGIN 
+                UPDATE Users 
+                SET UserBalance = UserBalance - @pAr 
+                WHERE UserEmail = @pUserEmail 
 
-                INSERT INTO Own (SkinAcquireDate, UserEmail, ValidSkinID)
-                VALUES (GETDATE(), @pUserEmail, @KeresettValidSkinID)
+                INSERT INTO Own (SkinAcquireDate, UserEmail, ValidSkinID) 
+                VALUES (GETDATE(), @pUserEmail, @KeresettValidSkinID) 
 
-                INSERT INTO Transactions (TransactionValue, TransactionType, TransactionDate, TransactionStatus, UserEmail, ValidSkinID)
-                VALUES (@pAr, 'Buying', GETDATE(), 'Success', @pUserEmail, @KeresettValidSkinID)
+				IF @@ERROR <> 0 
+				BEGIN 
+					RAISERROR('Insert hiba',16, 1) 
+					ROLLBACK TRANSACTION 
+					RETURN -11 
+				END 
 
-                SET @TalaltVasarolhato = 1
-                SET @pSikeresTargy = @KeresettItemName
-                SET @pMaradekEgyenleg = @JelenlegiEgyenleg - @pAr
-            END
-            ELSE
-            BEGIN
-                PRINT 'Nincs eleg fedezet, de folytatjuk a keresest...'
-            END
-        END
-            
-        FETCH NEXT FROM SkinKereso INTO @KeresettValidSkinID, @KeresettItemName
-    END
+                INSERT INTO Transactions (TransactionValue, TransactionType, TransactionDate, TransactionStatus, UserEmail, ValidSkinID) 
+                VALUES (@pAr, 'Buying', GETDATE(), 'Success', @pUserEmail, @KeresettValidSkinID) 
 
-    CLOSE SkinKereso
-    DEALLOCATE SkinKereso
+				IF @@ERROR <> 0 
+				BEGIN 
+					RAISERROR('Insert hiba',16, 1) 
+					ROLLBACK TRANSACTION 
+					RETURN -11 
+				END 
 
-    IF @TalaltVasarolhato = 1
-    BEGIN
-        COMMIT TRANSACTION
-        RETURN 1
-    END
-    ELSE
-    BEGIN
-        ROLLBACK TRANSACTION
+                SET @TalaltVasarolhato = 1 
+                SET @pSikeresTargy = @KeresettItemName 
+                SET @pMaradekEgyenleg = @JelenlegiEgyenleg - @pAr 
+            END 
+        END 
+
+        FETCH NEXT FROM SkinKereso INTO @KeresettValidSkinID, @KeresettItemName 
+    END 
+
+    CLOSE SkinKereso 
+    DEALLOCATE SkinKereso 
+
+    IF @TalaltVasarolhato = 1 
+    BEGIN 
+        COMMIT TRANSACTION 
+        RETURN 1 
+    END 
+    ELSE 
+    BEGIN 
+        ROLLBACK TRANSACTION 
         RAISERROR('Nem sikerult vasarolni (Mar birtokolja az osszes variaciot vagy nincs eleg penz).', 11, 5)
         RETURN -1
     END
